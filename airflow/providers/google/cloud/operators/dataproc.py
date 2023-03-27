@@ -2214,6 +2214,8 @@ class DataprocCreateBatchOperator(GoogleCloudBaseOperator):
         waiting on them asynchronously using the DataprocBatchSensor
     :param deferrable: Run operator in the deferrable mode.
     :param polling_interval_seconds: Time (seconds) to wait between calls to check the run status.
+    :param unique_batch_id: Generate a unique, but attachable batch_id based on the user provided batch_id as
+        a suffix.
     """
 
     template_fields: Sequence[str] = (
@@ -2242,6 +2244,7 @@ class DataprocCreateBatchOperator(GoogleCloudBaseOperator):
         asynchronous: bool = False,
         deferrable: bool = False,
         polling_interval_seconds: int = 5,
+        unique_batch_id: bool = False,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -2262,11 +2265,20 @@ class DataprocCreateBatchOperator(GoogleCloudBaseOperator):
         self.asynchronous = asynchronous
         self.deferrable = deferrable
         self.polling_interval_seconds = polling_interval_seconds
+        self.unique_batch_id = unique_batch_id
 
     def execute(self, context: Context):
         hook = DataprocHook(gcp_conn_id=self.gcp_conn_id, impersonation_chain=self.impersonation_chain)
         # batch_id might not be set and will be generated
         if self.batch_id:
+            if self.unique_batch_id:
+                ts = context["ts_nodash"][0:8] + context["ts_nodash"][9:]
+                try_number = context["task_instance"].try_number
+                self.log.info(
+                    "Generating a unique, but attachable, batch_id from %s with %s suffix", self.batch_id, ts
+                )
+                self._generate_batch_id(self.batch_id, ts, try_number, hook)
+
             link = DATAPROC_BATCH_LINK.format(
                 region=self.region, project_id=self.project_id, resource=self.batch_id
             )
@@ -2369,6 +2381,25 @@ class DataprocCreateBatchOperator(GoogleCloudBaseOperator):
     def on_kill(self):
         if self.operation:
             self.operation.cancel()
+
+    def _generate_batch_id(
+        self, batch_id: str, timestamp_suffix: str, try_number: int, hook: DataprocHook
+    ) -> str:
+        # for attempt_number in list(reversed(range(0, (try_number + 1)))):
+        # get list of all batch_id + timestamp_suffix which should be limited to this exact task instance
+        # logical date
+
+        results = hook.list_batches(
+            region=self.region,
+            project_id=self.project_id,
+            page_size=20,
+            page_token=None,
+            query_filter='batch_id="sahale*"',
+            order_by=None,
+        )
+        for batch in results:
+            print(batch.name)
+        return ""
 
 
 class DataprocDeleteBatchOperator(GoogleCloudBaseOperator):

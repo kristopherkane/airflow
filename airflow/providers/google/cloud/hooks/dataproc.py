@@ -952,6 +952,8 @@ class DataprocHook(GoogleBaseHook):
         project_id: str,
         page_size: int | None = None,
         page_token: str | None = None,
+        query_filter: str | None = None,
+        order_by: str | None = None,
         retry: Retry | _MethodDefault = DEFAULT,
         timeout: float | None = None,
         metadata: Sequence[tuple[str, str]] = (),
@@ -965,6 +967,11 @@ class DataprocHook(GoogleBaseHook):
             return fewer than this value. The default page size is 20; the maximum page size is 1000.
         :param page_token: Optional. A page token received from a previous ``ListBatches`` call.
             Provide this token to retrieve the subsequent page.
+        :param query_filter: Optional. Supported fields are 'batch_id', 'batch_uuid', 'state'
+            and 'create_time'
+        :param order_by: Optional. Field(s) on which to sort the list of batches. Currently, the only
+            supported sort orders are unspecified (empty) and ``create_time desc`` to sort by most recently
+            created batches first.
         :param retry: A retry object used to retry requests. If ``None`` is specified, requests will not be
             retried.
         :param timeout: The amount of time, in seconds, to wait for the request to complete. Note that if
@@ -979,6 +986,8 @@ class DataprocHook(GoogleBaseHook):
                 "parent": parent,
                 "page_size": page_size,
                 "page_token": page_token,
+                "filter": query_filter,
+                "order_by": order_by,
             },
             retry=retry,
             timeout=timeout,
