@@ -2388,7 +2388,7 @@ class DataprocCreateBatchOperator(GoogleCloudBaseOperator):
         # for attempt_number in list(reversed(range(0, (try_number + 1)))):
         # get list of all batch_id + timestamp_suffix which should be limited to this exact task instance
         # logical date
-
+        print("About to list_batches")
         results = hook.list_batches(
             region=self.region,
             project_id=self.project_id,
@@ -2397,6 +2397,7 @@ class DataprocCreateBatchOperator(GoogleCloudBaseOperator):
             query_filter='batch_id="sahale*"',
             order_by=None,
         )
+        print(results)
         for batch in results:
             print(batch.name)
         return ""
