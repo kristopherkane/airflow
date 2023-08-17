@@ -1068,7 +1068,7 @@ class DataprocHook(GoogleBaseHook):
         """
         client = self.get_batch_client(region)
         parent = f"projects/{project_id}/locations/{region}"
-        filter = f"batch_id=~\"^{batch_id}.*\" AND create_time>=\"2023-07-01T14:25:04.643818Z\""
+        filter = f'batch_id=~"^{batch_id}.*" AND create_time>="2023-07-01T14:25:04.643818Z"'
         batches = client.list_batches(
             request={
                 "parent": parent,
