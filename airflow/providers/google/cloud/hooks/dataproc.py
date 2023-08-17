@@ -1044,6 +1044,50 @@ class DataprocHook(GoogleBaseHook):
 
         return result
 
+    @GoogleBaseHook.fallback_to_default_project_id
+    def get_running_generated_batch_id(
+        self,
+        region: str,
+        project_id: str,
+        batch_id: str,
+        page_size: int | None = None,
+        page_token: str | None = None,
+        retry: Retry | _MethodDefault = DEFAULT,
+        timeout: float | None = None,
+        metadata: Sequence[tuple[str, str]] = (),
+    ) -> str:
+        """Check if a generated batch_id is already running. The user provided batch_id as a prefix to scan
+        for running batch_ids.
+        :param batch_id:
+        :param region:
+        :param project_id:
+        :param retry:
+        :param timeout:
+        :param metadata:
+
+        """
+        client = self.get_batch_client(region)
+        parent = f"projects/{project_id}/locations/{region}"
+        filter = f"batch_id=~\"^{batch_id}.*\" AND create_time>=\"2023-07-01T14:25:04.643818Z\""
+        batches = client.list_batches(
+            request={
+                "parent": parent,
+                "page_size": page_size,
+                "page_token": page_token,
+                "filter": filter,
+            },
+            retry=retry,
+            timeout=timeout,
+            metadata=metadata,
+        )
+        b: Batch
+        return_value: str = None
+        for b in batches:
+            self.log.info("Name: %s, state %s", b.name, b.state)
+            if b.state == Batch.State.RUNNING:
+                return_value = b.name
+        return return_value
+
 
 class DataprocAsyncHook(GoogleBaseHook):
     """Asynchronous interaction with Google Cloud Dataproc APIs.

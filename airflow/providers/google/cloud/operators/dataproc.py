@@ -2296,6 +2296,14 @@ class DataprocCreateBatchOperator(GoogleCloudBaseOperator):
         hook = DataprocHook(gcp_conn_id=self.gcp_conn_id, impersonation_chain=self.impersonation_chain)
         # batch_id might not be set and will be generated
         if self.batch_id:
+            running_generated_batch_id = hook.get_running_generated_batch_id(
+                region=self.region,
+                project_id=self.project_id,
+                batch_id=self.batch_id)
+            if running_generated_batch_id is not None:
+                self.log.info("Batch is running with %s", running_generated_batch_id)
+                self.batch_id = running_generated_batch_id
+            return
             link = DATAPROC_BATCH_LINK.format(
                 region=self.region, project_id=self.project_id, resource=self.batch_id
             )
